@@ -1,0 +1,12 @@
+langchain
+langchain-community
+langchain-core
+langchain-google-genai
+langchain-openai
+langchain-anthropic
+python-dotenv
+pydantic
+duckduckgo-search
+ddgs
+wikipedia
+rich
