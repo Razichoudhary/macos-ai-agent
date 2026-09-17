@@ -7,6 +7,7 @@
 [![LangChain](https://img.shields.io/badge/Orchestration-LangChain-1C3C3C.svg)](https://www.langchain.com/)
 [![Google Gemini](https://img.shields.io/badge/LLM-Gemini%203.5%20Flash%20Lite-4285F4.svg)](https://aistudio.google.com/)
 [![Platform](https://img.shields.io/badge/Platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
+[![Web UI](https://img.shields.io/badge/Web%20Dashboard-http%3A%2F%2Flocalhost%3A8000-00f0ff.svg)](#-web-dashboard--frontend-ui)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -154,14 +155,34 @@ GMAIL_APP_PASSWORD=your_16_character_app_password
 
 ---
 
-## 🚦 Usage
+## 🌐 Web Dashboard & Frontend UI
 
-Launch the interactive terminal interface:
+The agent includes a production-grade **Cyber-Glassmorphism Web Dashboard** built with FastAPI and modern Vanilla CSS/JS. It features real-time macOS system telemetry, an interactive HUD, a smart music player dock, live tool execution logs, and browser-based hands-free voice controls.
+
+### 🚀 Launching the Web Frontend:
 ```bash
-# Text interactive mode:
+# Option A: One-click launcher:
+./start_web.sh
+
+# Option B: Run directly with Python:
+python server.py
+```
+
+### 🔗 Frontend Web Link:
+Open your web browser at:  
+👉 **[http://localhost:8000](http://localhost:8000)** *(or `http://127.0.0.1:8000`)*
+
+---
+
+## 🚦 Usage & Command Line Modes
+
+You can also run the agent directly inside your terminal:
+
+```bash
+# 1. Text interactive mode:
 python main.py
 
-# Hands-free continuous voice mode (no keypresses needed):
+# 2. Hands-free continuous voice mode (no keypresses needed):
 python main.py --voice
 ```
 *(Inside text mode, you can also type `voice` anytime to switch into hands-free voice mode).*
