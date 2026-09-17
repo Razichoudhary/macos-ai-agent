@@ -1,9 +1,43 @@
+# Environment & Secrets
 .env
 .env.*
 !.env.example
+
+# Virtual Environments
 venv/
+env/
+.venv/
+
+# Python Cache & Build Artifacts
 __pycache__/
-*.pyc
-.DS_Store
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+
+# Logs & Output
 research_output.txt
 *.log
+
+# Testing & Linting
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# IDE & Editor Configs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS Artifacts
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+

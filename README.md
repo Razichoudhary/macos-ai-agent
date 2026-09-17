@@ -110,7 +110,7 @@ Specify any video, tutorial, song, or channel (e.g. *"open youtube apna college 
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/macos-ai-agent.git
+git clone https://github.com/Razichoudhary/macos-ai-agent.git
 cd macos-ai-agent
 ```
 
@@ -201,4 +201,11 @@ Distributed under the **MIT License**. See `LICENSE` for details.
 
 ## 👨‍💻 Author
 
-Built with ❤️ by a BTech AI/ML Student. Contributions, feature suggestions, and pull requests are welcome!
+Built with ❤️ by **[Razi Chaudhary](https://github.com/Razichoudhary)**. Contributions, feature suggestions, and pull requests are welcome!
+
+---
+
+## 🤝 Contributing
+
+Contributions make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**. Please check out [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and development guidelines.
+
