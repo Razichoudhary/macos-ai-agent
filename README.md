@@ -201,7 +201,11 @@ Distributed under the **MIT License**. See `LICENSE` for details.
 
 ## 👨‍💻 Author
 
-Built with ❤️ by **[Razi Chaudhary](https://github.com/Razichoudhary)**. Contributions, feature suggestions, and pull requests are welcome!
+Built with ❤️ by **Razi Chaudhary**
+* 🐙 **GitHub:** [@Razichoudhary](https://github.com/Razichoudhary)
+* 💼 **LinkedIn:** [Razi Chaudhary](https://www.linkedin.com/in/razi-chaudhary-ba946b324/)
+
+Contributions, feature suggestions, and pull requests are welcome!
 
 ---
 
