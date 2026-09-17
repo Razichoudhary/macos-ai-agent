@@ -15,6 +15,10 @@
 
 **MacOS AI Agent** is a production-engineered AI assistant designed to bridge high-speed language model reasoning with real-world operating system execution. 
 
+<p align="center">
+  <img src="screenshots/screenshot_1_terminal_cli.png" alt="MacOS AI Agent Terminal Interface" width="850">
+</p>
+
 Unlike traditional chatbots that can only converse, **MacOS AI Agent** is an **Action Agent**: it reasons about user intent, decides the optimal course of action, queries live external tools (Wikipedia, DuckDuckGo web search), and directly automates macOS native applications, media players, system settings, desktop files, and emails.
 
 ---
