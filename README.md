@@ -25,28 +25,34 @@ Unlike traditional chatbots that can only converse, **MacOS AI Agent** is an **A
 
 ## 🚀 Key Features
 
-### ⚡ 1. Sub-50ms Instant Direct Routing
-Deterministic system actions (volume control, battery status, screenshots, dark mode, screen lock, clipboard management, text-to-speech) bypass LLM API latency completely via a localized intent pattern router, executing natively in **under 50 milliseconds**.
+### 🎙️ 1. Hands-Free Continuous Voice Control
+Speak commands completely hands-free via microphone without pressing any keys. Powered by `SpeechRecognition` and PortAudio/`pyaudio`, the engine continuously listens, waits for an exact **2-second speech pause** (`pause_threshold = 2.0`), transcribes via Google Web Speech, and executes commands instantly. Launch directly with `python main.py --voice` or type `voice` in the terminal.
 
-### 🧠 2. Multi-Turn Conversational Memory
+### 🎵 2. Smart Music & YouTube Playback (Top Result + Random Fallback)
+* **Specific Song/Artist:** Command *"play music Shape of You"* or *"play sunflower"* — automatically searches YouTube, extracts the **#1 top result**, and opens it directly in your browser.
+* **Random Fallback:** Say *"play music"*, *"play any music"*, or *"play a song"* without naming a title — the agent automatically selects a hit from a curated global playlist and plays the top result immediately.
+* **Instant Routing:** Bypasses LLM latency completely with sub-second direct playback.
+
+### ⚡ 3. Sub-50ms Instant Direct Routing
+Deterministic system actions (smooth volume up/down, battery status, screenshots, dark mode, screen lock, clipboard management, text-to-speech) bypass LLM API latency completely via a localized intent pattern router, executing natively in **under 50 milliseconds**.
+
+### 🧠 4. Multi-Turn Conversational Memory
 Maintains rolling context across multiple user requests. You can research a topic, ask follow-up questions, and command the agent: *"Now save that summary into a note file on my Desktop"*, or *"Email that research to my colleague"*.
 
-### 🔍 3. Live Web Research & Structured Synthesis
+### 🔍 5. Live Web Research & Structured Synthesis
 Gathers up-to-date facts, current news, and scientific articles using DuckDuckGo search and Wikipedia. All research findings are strictly validated against a **Pydantic schema** (`ResearchResponse`) with resilient multi-tier JSON regex fallbacks to eliminate parsing failures.
 
-### 🎬 4. YouTube Video Auto-Search & Playback
-Specify any video, tutorial, song, or channel (e.g. *"open youtube apna college channel and in that the video python full course for beginner"*). The agent automatically queries YouTube's endpoint, extracts the precise video ID, and launches `https://www.youtube.com/watch?v=...` directly in your browser.
-
-### ✉️ 5. Automated Email Dispatch
+### ✉️ 6. Automated Email Dispatch
 * **Direct SMTP Transmission:** If configured with a Google App Password, transmits emails silently in the background in **0.2 seconds** via encrypted SSL (`smtp.gmail.com:465`).
-* **Web Compose Fallback:** Opens the official Gmail Web Compose interface with recipient, subject, and body pre-filled, triggering the send shortcut automatically.
+* **Web Compose Auto-Send:** Opens the official Gmail Web Compose interface and automatically triggers DOM click / shortcuts to send without manual intervention.
 
-### 🖥️ 6. Native macOS Desktop Control
+### 🖥️ 7. Native macOS Desktop Control
 * Open & close any desktop app (`open_app`, `close_app`).
 * Distinguishes native apps from web services (e.g., native **Mail.app** vs. web **Gmail**, native **Notes.app** vs. **Google Keep**).
 * Read and write files directly on the macOS Desktop.
 * Native Apple Reminders integration (`create_reminder`).
 * Media control for Apple Music and Spotify (play, pause, next, previous, now playing).
+
 
 ---
 
@@ -152,10 +158,24 @@ GMAIL_APP_PASSWORD=your_16_character_app_password
 
 Launch the interactive terminal interface:
 ```bash
+# Text interactive mode:
 python main.py
+
+# Hands-free continuous voice mode (no keypresses needed):
+python main.py --voice
 ```
+*(Inside text mode, you can also type `voice` anytime to switch into hands-free voice mode).*
 
 ### Example Commands:
+
+#### 🎙️ Voice Commands (Hands-Free):
+* *"open youtube"*
+* *"play music"* *(plays a random top hit)*
+* *"play music shape of you"* *(plays top YouTube search result)*
+* *"volume up"* / *"volume down"*
+* *"battery"* / *"take screenshot"* / *"dark mode"*
+* *"send email to john@example.com with subject Hi saying Let's meet at 5"*
+
 
 #### 🔍 Live Research:
 * `What is quantum computing in simple terms?`

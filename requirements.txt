@@ -10,3 +10,9 @@ duckduckgo-search
 ddgs
 wikipedia
 rich
+SpeechRecognition
+pyaudio
+sounddevice
+fastapi
+uvicorn[standard]
+python-multipart

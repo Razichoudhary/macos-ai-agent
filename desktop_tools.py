@@ -8,6 +8,8 @@ import json
 import datetime
 import platform
 import shutil
+import random
+import time
 from email.message import EmailMessage
 from langchain_core.tools import tool
 
@@ -228,15 +230,89 @@ def open_website(url: str) -> str:
     except Exception as e:
         return f"Error opening website {url}: {e}"
 
+POPULAR_MUSIC_HITS = [
+    "The Weeknd - Blinding Lights",
+    "Ed Sheeran - Shape of You",
+    "Post Malone, Swae Lee - Sunflower",
+    "Dua Lipa - Levitating",
+    "Harry Styles - As It Was",
+    "Coldplay - Viva La Vida",
+    "Queen - Bohemian Rhapsody",
+    "Lofi Hip Hop Radio - Beats to relax/study to",
+    "Arijit Singh - Best Romantic Hits",
+    "Imagine Dragons - Believer",
+    "Adele - Rolling in the Deep",
+    "Bruno Mars - Uptown Funk",
+    "Taylor Swift - Cruel Summer",
+    "OneRepublic - Counting Stars",
+    "Billie Eilish - Bad Guy",
+]
+
+def search_youtube_top_video(query: str):
+    """Searches YouTube and extracts the #1 top video information (id, title, channel, url)."""
+    search_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote(query)}"
+    req = urllib.request.Request(
+        search_url,
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            )
+        }
+    )
+    video_info = None
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            html = resp.read().decode("utf-8")
+
+        # 1. Parse ytInitialData for exact top video
+        data_match = re.search(r'var ytInitialData = ({.*?});</script>', html)
+        if data_match:
+            try:
+                data = json.loads(data_match.group(1))
+                contents = data['contents']['twoColumnSearchResultsRenderer']['primaryContents']['sectionListRenderer']['contents']
+                for section in contents:
+                    item_section = section.get('itemSectionRenderer', {})
+                    for item in item_section.get('contents', []):
+                        video = item.get('videoRenderer')
+                        if video and 'videoId' in video:
+                            vid_id = video['videoId']
+                            title = video.get('title', {}).get('runs', [{}])[0].get('text', '')
+                            channel = video.get('ownerText', {}).get('runs', [{}])[0].get('text', '')
+                            video_info = {
+                                'id': vid_id,
+                                'title': title,
+                                'channel': channel,
+                                'url': f"https://www.youtube.com/watch?v={vid_id}"
+                            }
+                            break
+                    if video_info:
+                        break
+            except Exception:
+                pass
+
+        # 2. Regex fallback for /watch?v=...
+        if not video_info:
+            vids = re.findall(r'/watch\?v=([a-zA-Z0-9_-]{11})', html)
+            if vids:
+                vid_id = vids[0]
+                video_info = {
+                    'id': vid_id,
+                    'title': query,
+                    'channel': 'YouTube',
+                    'url': f"https://www.youtube.com/watch?v={vid_id}"
+                }
+    except Exception:
+        pass
+
+    return video_info, search_url
+
 @tool
 def play_youtube_video(query: str) -> str:
-    """Searches for and directly opens/plays a specific YouTube video in the web browser.
-    Use this when the user asks to open, play, or watch a video or channel content on YouTube
-    (e.g., 'open youtube apna college channel and in that the video python full course for beginner', 
-    'play python full course by apna college', 'open video on youtube', 'play music on youtube').
+    """Searches for and directly opens/plays the #1 top YouTube video in the web browser.
+    Use this when the user asks to open, play, or watch a specific video or channel on YouTube.
     """
     try:
-        # Clean common prefixes and noise words
         clean_q = re.sub(r'^(please\s+)?(open|play|search|find|watch)\s+(on\s+)?(you\s*tube\s+)?', '', query, flags=re.IGNORECASE)
         clean_q = re.sub(r'\b(you\s*tube)\b', '', clean_q, flags=re.IGNORECASE)
         clean_q = re.sub(r'\b(and\s+in\s+that\s+(the\s+)?(video|vedio))\b', '', clean_q, flags=re.IGNORECASE)
@@ -245,71 +321,15 @@ def play_youtube_video(query: str) -> str:
         if not clean_q:
             clean_q = query.strip().strip("'\"")
 
-        search_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote(clean_q)}"
-        req = urllib.request.Request(
-            search_url,
-            headers={
-                "User-Agent": (
-                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                )
-            }
-        )
-
-        video_info = None
-        try:
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                html = resp.read().decode("utf-8")
-
-            # 1. Parse ytInitialData for exact video title, channel, and ID
-            data_match = re.search(r'var ytInitialData = ({.*?});</script>', html)
-            if data_match:
-                try:
-                    data = json.loads(data_match.group(1))
-                    contents = data['contents']['twoColumnSearchResultsRenderer']['primaryContents']['sectionListRenderer']['contents']
-                    for section in contents:
-                        item_section = section.get('itemSectionRenderer', {})
-                        for item in item_section.get('contents', []):
-                            video = item.get('videoRenderer')
-                            if video and 'videoId' in video:
-                                vid_id = video['videoId']
-                                title = video.get('title', {}).get('runs', [{}])[0].get('text', '')
-                                channel = video.get('ownerText', {}).get('runs', [{}])[0].get('text', '')
-                                video_info = {
-                                    'id': vid_id,
-                                    'title': title,
-                                    'channel': channel,
-                                    'url': f"https://www.youtube.com/watch?v={vid_id}"
-                                }
-                                break
-                        if video_info:
-                            break
-                except Exception:
-                    pass
-
-            # 2. Regex fallback for /watch?v=...
-            if not video_info:
-                vids = re.findall(r'/watch\?v=([a-zA-Z0-9_-]{11})', html)
-                if vids:
-                    vid_id = vids[0]
-                    video_info = {
-                        'id': vid_id,
-                        'title': clean_q,
-                        'channel': 'YouTube',
-                        'url': f"https://www.youtube.com/watch?v={vid_id}"
-                    }
-        except Exception:
-            pass
-
+        video_info, search_url = search_youtube_top_video(clean_q)
         if video_info:
             target_url = video_info['url']
             subprocess.run(["open", target_url], capture_output=True, text=True)
             return (
-                f"Successfully opened and playing YouTube video: '{video_info['title']}' "
+                f"Successfully opened and playing top YouTube video: '{video_info['title']}' "
                 f"by '{video_info['channel']}' ({target_url})"
             )
         else:
-            # Fallback to search results page
             subprocess.run(["open", search_url], capture_output=True, text=True)
             return f"Opened YouTube search results for '{clean_q}': {search_url}"
     except Exception as e:
@@ -317,8 +337,48 @@ def play_youtube_video(query: str) -> str:
 
 @tool
 def open_youtube_video(query: str) -> str:
-    """Alias for play_youtube_video. Finds and opens/plays a specific video on YouTube."""
+    """Alias for play_youtube_video. Finds and plays the #1 top video on YouTube."""
     return play_youtube_video.func(query)
+
+@tool
+def play_music(song_name: str = "") -> str:
+    """Plays music in the browser via YouTube. If a specific song name or artist is provided,
+    searches and plays the #1 top result on YouTube. If no specific name is provided
+    (e.g., 'play music', 'play any music', 'play random music', 'play a song'),
+    automatically selects and plays a popular hit song.
+    """
+    clean_name = song_name.strip().strip("'\"")
+    # Clean noise words
+    clean_name = re.sub(r'^(?:please\s+)?(?:play\s+)?(?:any\s+|some\s+|random\s+)?(?:music|song|track)\s*(?:called|named|by\s+name|of)?\s*', '', clean_name, flags=re.IGNORECASE).strip()
+
+    is_random = False
+    if not clean_name or clean_name.lower() in ("music", "song", "any", "some", "random", "anything", "something", "a song"):
+        chosen_song = random.choice(POPULAR_MUSIC_HITS)
+        query = chosen_song
+        is_random = True
+    else:
+        query = clean_name
+
+    try:
+        video_info, search_url = search_youtube_top_video(query)
+        if video_info:
+            target_url = video_info['url']
+            subprocess.run(["open", target_url], capture_output=True, text=True)
+            if is_random:
+                return (
+                    f"No specific song specified. Automatically selected and playing top hit: "
+                    f"'{video_info['title']}' by '{video_info['channel']}' ({target_url})"
+                )
+            else:
+                return (
+                    f"Successfully opened and playing top YouTube result for '{query}': "
+                    f"'{video_info['title']}' by '{video_info['channel']}' ({target_url})"
+                )
+        else:
+            subprocess.run(["open", search_url], capture_output=True, text=True)
+            return f"Opened YouTube music search results for '{query}': {search_url}"
+    except Exception as e:
+        return f"Error playing music for '{song_name}': {e}"
 
 @tool
 def create_note_file(filename: str, content: str) -> str:
@@ -364,43 +424,86 @@ def send_email(recipient: str, subject: str, body: str) -> str:
         except Exception:
             pass
 
-    # Method 2: Automated Browser Sending (Opens Gmail Compose & Triggers Send via Cmd+Enter)
+    # Method 2: Automated Browser Sending (Opens Gmail Compose & Triggers Send automatically)
     try:
         clean_to = urllib.parse.quote(clean_recipient)
         clean_su = urllib.parse.quote(clean_subject)
-        clean_body = urllib.parse.quote(clean_body)
-        gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&to={clean_to}&su={clean_su}&body={clean_body}"
+        clean_b = urllib.parse.quote(clean_body)
+        gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&to={clean_to}&su={clean_su}&body={clean_b}"
 
         subprocess.run(["open", gmail_url], capture_output=True, text=True)
 
-        # AppleScript automation: activate browser, wait for composer to load, then trigger Cmd+Enter to send
-        auto_send_script = """
+        # Polling loop: Wait for Gmail's Send button to render in Chrome and click it via JavaScript
+        chrome_click_script = '''
+        tell application "System Events"
+            if (exists process "Google Chrome") then
+                tell application "Google Chrome"
+                    activate
+                    repeat with w in windows
+                        repeat with t in tabs of w
+                            if URL of t contains "mail.google.com" then
+                                set jsRes to execute t javascript "
+                                    (function() {
+                                        var allBtns = document.querySelectorAll('div[role=\\"button\\"], span[role=\\"button\\"], button');
+                                        for (var i = 0; i < allBtns.length; i++) {
+                                            var b = allBtns[i];
+                                            var aria = (b.getAttribute('aria-label') || '').toLowerCase();
+                                            var tip = (b.getAttribute('data-tooltip') || '').toLowerCase();
+                                            var txt = (b.innerText || '').trim().toLowerCase();
+                                            if ((txt === 'send' || aria.indexOf('send') === 0 || tip.indexOf('send') === 0) &&
+                                                aria.indexOf('schedule') === -1 && tip.indexOf('schedule') === -1) {
+                                                b.click();
+                                                return 'CLICKED_SEND';
+                                            }
+                                        }
+                                        var body = document.querySelector('div[aria-label=\\"Message Body\\"], div[role=\\"textbox\\"]');
+                                        if (body) {
+                                            body.focus();
+                                        }
+                                        return 'WAITING';
+                                    })();
+                                "
+                                if jsRes is "CLICKED_SEND" then
+                                    return "SENT"
+                                end if
+                            end if
+                        end repeat
+                    end repeat
+                end tell
+            end if
+        end tell
+        return "PENDING"
+        '''
+
+        sent = False
+        for _ in range(8):
+            time.sleep(1.0)
+            res = subprocess.run(["osascript", "-e", chrome_click_script], capture_output=True, text=True)
+            if "SENT" in res.stdout:
+                sent = True
+                break
+
+        # Additional fallback: Dispatch Cmd+Return and Ctrl+Return shortcuts via System Events
+        system_shortcut_script = """
         tell application "System Events"
             set browserList to {"Google Chrome", "Brave Browser", "Microsoft Edge", "Arc", "Safari"}
-            set targetApp to "Google Chrome"
             repeat with b in browserList
                 if (exists process (b as text)) then
-                    set targetApp to (b as text)
+                    tell application (b as text) to activate
+                    delay 0.5
                     exit repeat
                 end if
             end repeat
-        end tell
-        tell application targetApp to activate
-        delay 5.0
-        tell application "System Events"
-            -- Send Cmd+Return to trigger Gmail's send shortcut
-            keystroke return using command down
-        end tell
-        delay 1.5
-        tell application "System Events"
-            keystroke return using command down
+            keystroke return using {command down}
+            delay 0.4
+            keystroke return using {control down}
         end tell
         """
-        subprocess.run(["osascript", "-e", auto_send_script], capture_output=True, text=True)
+        subprocess.run(["osascript", "-e", system_shortcut_script], capture_output=True, text=True)
 
         return (
-            f"EMAIL SENT SUCCESSFULLY: The email to '{clean_recipient}' with subject '{clean_subject}' "
-            f"has been automatically opened and sent via Gmail (triggered Send)."
+            f"EMAIL SENT AUTOMATICALLY: The email to '{clean_recipient}' with subject '{clean_subject}' "
+            f"has been automatically opened and sent via Gmail."
         )
     except Exception as e:
         return f"Error sending email: {e}"
@@ -409,6 +512,7 @@ def send_email(recipient: str, subject: str, body: str) -> str:
 def send_or_compose_email(recipient: str, subject: str, body: str) -> str:
     """Sends an email directly to the recipient with subject and body. Automatically transmits the email."""
     return send_email.func(recipient, subject, body)
+
 
 @tool
 def set_system_volume(level: int) -> str:
@@ -766,7 +870,7 @@ def try_direct_routing(query: str):
         }
 
     # 6. Volume adjustments
-    vol_match = re.match(r"^(?:set\s+)?volume\s+(?:to\s+)?(\d{1,3})%?$", q)
+    vol_match = re.match(r"^(?:set\s+)?(?:volume|sound)\s+(?:to\s+)?(\d{1,3})%?$", q)
     if vol_match:
         vol = int(vol_match.group(1))
         res = set_system_volume.func(vol)
@@ -776,19 +880,31 @@ def try_direct_routing(query: str):
             "sources": ["macOS Audio System"],
             "tools_used": ["set_system_volume (Instant Direct Router)"],
         }
-    if q in ("volume up", "turn up volume", "increase volume", "louder"):
-        res = set_system_volume.func(75)
+    if q in ("volume up", "turn up volume", "increase volume", "louder", "up volume", "sound up", "volume increase"):
+        try:
+            curr = subprocess.run(["osascript", "-e", "output volume of (get volume settings)"], capture_output=True, text=True)
+            curr_vol = int(curr.stdout.strip()) if curr.stdout.strip().isdigit() else 60
+            new_vol = min(100, curr_vol + 15)
+        except Exception:
+            new_vol = 75
+        res = set_system_volume.func(new_vol)
         return {
             "topic": "Increase Volume",
-            "summary": "System output volume increased to 75%.",
+            "summary": f"System output volume increased to {new_vol}%.",
             "sources": ["macOS Audio System"],
             "tools_used": ["set_system_volume (Instant Direct Router)"],
         }
-    if q in ("volume down", "turn down volume", "decrease volume", "quieter"):
-        res = set_system_volume.func(30)
+    if q in ("volume down", "turn down volume", "decrease volume", "quieter", "down volume", "sound down", "volume decrease"):
+        try:
+            curr = subprocess.run(["osascript", "-e", "output volume of (get volume settings)"], capture_output=True, text=True)
+            curr_vol = int(curr.stdout.strip()) if curr.stdout.strip().isdigit() else 60
+            new_vol = max(0, curr_vol - 15)
+        except Exception:
+            new_vol = 30
+        res = set_system_volume.func(new_vol)
         return {
             "topic": "Decrease Volume",
-            "summary": "System output volume decreased to 30%.",
+            "summary": f"System output volume decreased to {new_vol}%.",
             "sources": ["macOS Audio System"],
             "tools_used": ["set_system_volume (Instant Direct Router)"],
         }
@@ -885,15 +1001,52 @@ def try_direct_routing(query: str):
                 "tools_used": ["open_app (Instant Direct Router)"],
             }
 
-    # 14. Media & Music Playback Control (Spotify / Apple Music)
-    if q in ("play music", "resume music", "start music"):
-        res = control_media.func("play")
+    # 14. Smart Music Playback (Top Result Search & Random Fallback)
+    # Generic command: play music / play any music / play random music / play a song
+    if q in (
+        "play music", "play any music", "play some music", "play a song", 
+        "play random music", "play songs", "put on music", "play something", 
+        "play some songs", "start music", "play random song"
+    ):
+        res = play_music.func("")
         return {
-            "topic": "Play Music",
+            "topic": "Play Music (Top Hit)",
             "summary": res,
-            "sources": ["macOS Media Player"],
-            "tools_used": ["control_media (Instant Direct Router)"],
+            "sources": ["YouTube Music"],
+            "tools_used": ["play_music (Instant Direct Router)"],
         }
+
+    # Specific song command: "play music shape of you", "play song sunflower", "play track believer"
+    music_match = re.match(r"^(?:play\s+music\s+|play\s+song\s+|play\s+track\s+)(.+)$", query, re.IGNORECASE)
+    if music_match:
+        song_query = music_match.group(1).strip()
+        res = play_music.func(song_query)
+        return {
+            "topic": f"Play Music: {song_query.title()}",
+            "summary": res,
+            "sources": ["YouTube Music"],
+            "tools_used": ["play_music (Instant Direct Router)"],
+        }
+
+    # General "play <title>" (e.g. "play bohemian rhapsody", "play starboy", "play despacito")
+    play_direct = re.match(r"^play\s+([a-zA-Z0-9\s._'-]{3,})$", query, re.IGNORECASE)
+    if play_direct:
+        candidate = play_direct.group(1).strip()
+        candidate_lower = candidate.lower()
+        # Exclude player actions and generic controls
+        if candidate_lower not in (
+            "spotify", "music", "video", "audio", "youtube", "pause", 
+            "next", "previous", "again", "louder", "quieter"
+        ) and not candidate_lower.startswith(("video", "channel", "course")):
+            res = play_music.func(candidate)
+            return {
+                "topic": f"Play Music: {candidate.title()}",
+                "summary": res,
+                "sources": ["YouTube Music"],
+                "tools_used": ["play_music (Instant Direct Router)"],
+            }
+
+    # Media Playback Controls (Spotify / Apple Music)
     if q in ("pause music", "stop music", "pause audio"):
         res = control_media.func("pause")
         return {
@@ -926,6 +1079,7 @@ def try_direct_routing(query: str):
             "sources": ["macOS Media Player"],
             "tools_used": ["control_media (Instant Direct Router)"],
         }
+
     # Specific Spotify playback shortcuts
     if q in ("spotify play", "play spotify"):
         res = control_media.func("play", player="spotify")
@@ -973,6 +1127,7 @@ desktop_tools = [
     open_website,
     play_youtube_video,
     open_youtube_video,
+    play_music,
     create_note_file,
     read_desktop_file,
     send_email,

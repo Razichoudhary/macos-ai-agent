@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS AI Agent — Autonomous Desktop Assistant & Research Engine</title>
+    <meta name="description" content="Autonomous Desktop Assistant & Real-Time Knowledge Retrieval Engine for macOS. Powered by LangChain, Google Gemini, and Native macOS Automation.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Markdown Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+    <div class="ambient-glow glow-3"></div>
+
+    <!-- Main Container -->
+    <div class="app-container">
+        <!-- Top Navbar -->
+        <header class="top-nav">
+            <div class="nav-left">
+                <div class="brand-logo">
+                    <div class="logo-icon"></div>
+                    <div class="logo-pulse"></div>
+                </div>
+                <div class="brand-text">
+                    <h1>macOS AI Agent</h1>
+                    <span class="sub-badge">Autonomous Desktop & Research Engine</span>
+                </div>
+            </div>
+
+            <div class="nav-center">
+                <div class="status-pill status-connected" id="connectionPill">
+                    <span class="status-dot"></span>
+                    <span class="status-label">Online</span>
+                </div>
+                <div class="status-pill router-pill">
+                    <span class="pill-icon">⚡</span>
+                    <span>Direct Router: &lt;50ms</span>
+                </div>
+                <div class="status-pill model-pill">
+                    <span class="pill-icon">🧠</span>
+                    <span>Gemini 3.5 Flash</span>
+                </div>
+            </div>
+
+            <div class="nav-right">
+                <div class="nav-widget battery-widget" id="navBatteryWidget" title="macOS Battery">
+                    <span class="battery-icon" id="batteryIcon">🔋</span>
+                    <span class="battery-text" id="batteryText">--%</span>
+                </div>
+                <button class="nav-action-btn" id="voiceToggleNavBtn" title="Toggle Hands-Free Voice Mode">
+                    <span class="mic-nav-icon">🎙️</span>
+                    <span class="voice-mode-label">Voice Off</span>
+                </button>
+                <button class="nav-action-btn clear-btn" id="clearMemoryBtn" title="Reset Conversation Memory">
+                    <span>✨ Clear Memory</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Workspace -->
+        <main class="dashboard-grid">
+            <!-- LEFT COLUMN: macOS System HUD & Media Center -->
+            <aside class="side-panel left-panel">
+                <!-- System Hardware & Power Card -->
+                <div class="glass-card hud-card">
+                    <div class="card-header">
+                        <span class="card-title">🖥️ System Telemetry</span>
+                        <span class="live-tag">LIVE</span>
+                    </div>
+
+                    <!-- Battery Gauge -->
+                    <div class="telemetry-row">
+                        <div class="telemetry-info">
+                            <span class="telemetry-label">Battery Level</span>
+                            <span class="telemetry-value" id="hudBatteryValue">--%</span>
+                        </div>
+                        <div class="battery-progress-bar">
+                            <div class="battery-progress-fill" id="batteryProgressFill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Volume Control Deck -->
+                    <div class="telemetry-row volume-section">
+                        <div class="telemetry-info">
+                            <span class="telemetry-label">Speaker Output</span>
+                            <span class="telemetry-value" id="hudVolumeValue">50%</span>
+                        </div>
+                        <div class="volume-slider-container">
+                            <input type="range" min="0" max="100" value="50" class="volume-slider" id="volumeSlider">
+                        </div>
+                        <div class="volume-btn-group">
+                            <button class="quick-step-btn" id="volDownBtn" title="Decrease volume 15%">🔉 -15%</button>
+                            <button class="quick-step-btn" id="muteToggleBtn" title="Mute / Unmute">🔇 Mute</button>
+                            <button class="quick-step-btn" id="volUpBtn" title="Increase volume 15%">🔊 +15%</button>
+                        </div>
+                    </div>
+
+                    <!-- Quick System Actions Grid -->
+                    <div class="quick-actions-grid">
+                        <button class="action-tile" id="tileScreenshot">
+                            <span class="tile-icon">📸</span>
+                            <span class="tile-label">Screenshot</span>
+                        </button>
+                        <button class="action-tile" id="tileDarkMode">
+                            <span class="tile-icon">🌙</span>
+                            <span class="tile-label">Dark Mode</span>
+                        </button>
+                        <button class="action-tile" id="tileLock">
+                            <span class="tile-icon">🔒</span>
+                            <span class="tile-label">Lock Mac</span>
+                        </button>
+                        <button class="action-tile" id="tileSpecs">
+                            <span class="tile-icon">⚡</span>
+                            <span class="tile-label">Specs</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Smart Music & YouTube Dock -->
+                <div class="glass-card music-card">
+                    <div class="card-header">
+                        <span class="card-title">🎵 Music & Media</span>
+                        <span class="source-badge">YouTube / macOS</span>
+                    </div>
+
+                    <div class="now-playing-banner" id="nowPlayingBanner">
+                        <div class="vinyl-record" id="vinylRecord">
+                            <div class="vinyl-groove"></div>
+                        </div>
+                        <div class="track-details">
+                            <span class="track-title" id="trackTitle">Ready to Play</span>
+                            <span class="track-artist" id="trackArtist">Top search or random hits</span>
+                        </div>
+                    </div>
+
+                    <!-- Media Transport Controls -->
+                    <div class="media-controls-row">
+                        <button class="media-ctrl-btn" id="mediaPrevBtn" title="Previous Song">⏮</button>
+                        <button class="media-ctrl-btn play-pause-btn" id="mediaPlayPauseBtn" title="Play / Pause">▶</button>
+                        <button class="media-ctrl-btn" id="mediaNextBtn" title="Next Song">⏭</button>
+                        <button class="media-ctrl-btn random-btn" id="mediaRandomBtn" title="Play Random Top Hit">🎲 Random</button>
+                    </div>
+
+                    <!-- Song Search Form -->
+                    <div class="song-search-box">
+                        <input type="text" id="songSearchInput" placeholder="Search any song (e.g. Shape of You)...">
+                        <button class="song-play-btn" id="songPlaySubmitBtn">Play</button>
+                    </div>
+                </div>
+
+                <!-- Quick App Launchers -->
+                <div class="glass-card apps-card">
+                    <div class="card-header">
+                        <span class="card-title">🚀 Quick Launchers</span>
+                    </div>
+                    <div class="app-pills-wrap">
+                        <button class="app-pill" data-app="youtube">🎬 YouTube</button>
+                        <button class="app-pill" data-app="gmail">✉️ Gmail</button>
+                        <button class="app-pill" data-app="mail">📬 Apple Mail</button>
+                        <button class="app-pill" data-app="safari">🧭 Safari</button>
+                        <button class="app-pill" data-app="notes">📝 Notes</button>
+                        <button class="app-pill" data-app="calculator">🧮 Calculator</button>
+                        <button class="app-pill" data-app="terminal">💻 Terminal</button>
+                        <button class="app-pill" data-app="antigravity ide">🪐 Antigravity IDE</button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- CENTER COLUMN: Interactive Chat & Voice Arena -->
+            <section class="main-chat-arena">
+                <!-- Hands-Free Voice Control Stage -->
+                <div class="voice-stage glass-card" id="voiceStage">
+                    <div class="voice-stage-content">
+                        <div class="mic-orb-container">
+                            <div class="soundwave-ring ring-1"></div>
+                            <div class="soundwave-ring ring-2"></div>
+                            <div class="soundwave-ring ring-3"></div>
+                            <button class="big-mic-btn" id="bigMicBtn" title="Click or speak hands-free">
+                                <span class="mic-glyph" id="micGlyph">🎙️</span>
+                            </button>
+                        </div>
+                        <div class="voice-stage-text">
+                            <h3 class="voice-heading" id="voiceHeading">Hands-Free Voice Engine</h3>
+                            <p class="voice-subtext" id="voiceSubtext">
+                                Click the microphone or speak commands. Pauses for <strong class="highlight-time">2 seconds</strong> after speech and auto-executes without pressing any key!
+                            </p>
+                        </div>
+                        <div class="pause-meter-wrap" id="pauseMeterWrap" style="display: none;">
+                            <div class="pause-timer-label">2s Pause Detection</div>
+                            <div class="pause-bar-bg">
+                                <div class="pause-bar-fill" id="pauseBarFill"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Feed Stream -->
+                <div class="chat-stream-wrap" id="chatStream">
+                    <!-- Welcome Initial Message -->
+                    <div class="chat-message agent-message welcome-message">
+                        <div class="message-avatar"></div>
+                        <div class="message-body">
+                            <div class="message-meta">
+                                <span class="sender-name">macOS AI Agent</span>
+                                <span class="badge badge-instant">⚡ Sub-50ms Direct Router</span>
+                                <span class="badge badge-gemini">🧠 Gemini Flash</span>
+                            </div>
+                            <div class="message-content">
+                                <p><strong>Welcome! I am your Autonomous macOS AI Agent.</strong></p>
+                                <p>I can execute macOS commands natively in under 50ms, perform live web research, compose emails, and play music automatically.</p>
+                                <div class="welcome-prompts-grid">
+                                    <div class="prompt-chip" data-query="play music">🎲 "play music"</div>
+                                    <div class="prompt-chip" data-query="play music shape of you">🎵 "play music shape of you"</div>
+                                    <div class="prompt-chip" data-query="volume up">🔊 "volume up"</div>
+                                    <div class="prompt-chip" data-query="battery">🔋 "battery status"</div>
+                                    <div class="prompt-chip" data-query="open youtube">🎬 "open youtube"</div>
+                                    <div class="prompt-chip" data-query="dark mode">🌙 "toggle dark mode"</div>
+                                    <div class="prompt-chip" data-query="take screenshot">📸 "take screenshot"</div>
+                                    <div class="prompt-chip" data-query="send email to test@domain.com with subject Hello saying Good day!">✉️ "send email..."</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Action Bar -->
+                <footer class="chat-input-bar glass-card">
+                    <div class="input-form">
+                        <textarea id="chatInput" rows="1" placeholder="Type a command or speak hands-free (e.g. 'open youtube', 'play music', 'volume up')..." autocomplete="off"></textarea>
+                        <div class="input-actions">
+                            <button class="icon-action-btn mic-btn" id="inlineMicBtn" title="Toggle Voice Listening">
+                                <span class="action-icon">🎙️</span>
+                            </button>
+                            <button class="send-btn" id="sendBtn" title="Execute Command (Enter)">
+                                <span class="send-icon">➤</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="input-hints">
+                        <span>Press <kbd>Enter</kbd> to send</span>
+                        <span>•</span>
+                        <span>Press <kbd>M</kbd> for voice mode</span>
+                        <span>•</span>
+                        <span>2s speech pause auto-executes</span>
+                    </div>
+                </footer>
+            </section>
+
+            <!-- RIGHT COLUMN: Real-Time Tool Execution Log & Specs -->
+            <aside class="side-panel right-panel">
+                <!-- Real-Time Activity Log Card -->
+                <div class="glass-card activity-card">
+                    <div class="card-header">
+                        <span class="card-title">⚡ Live Activity Feed</span>
+                        <span class="status-live-pulse"></span>
+                    </div>
+                    <div class="activity-stream" id="activityStream">
+                        <div class="activity-item info-item">
+                            <span class="activity-time">Now</span>
+                            <div class="activity-content">
+                                <strong>System Ready</strong>
+                                <p>WebSocket stream connected & live.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Hardware Details Card -->
+                <div class="glass-card specs-card">
+                    <div class="card-header">
+                        <span class="card-title">⚙️ Machine Architecture</span>
+                    </div>
+                    <div class="specs-list" id="specsList">
+                        <div class="spec-entry">
+                            <span class="spec-key">Processor / Architecture:</span>
+                            <span class="spec-val" id="specCpu">Apple Silicon (M-Series)</span>
+                        </div>
+                        <div class="spec-entry">
+                            <span class="spec-key">Operating System:</span>
+                            <span class="spec-val">macOS (Darwin Core)</span>
+                        </div>
+                        <div class="spec-entry">
+                            <span class="spec-key">Direct Router Latency:</span>
+                            <span class="spec-val highlight-green">&lt; 50ms (Zero API Overhead)</span>
+                        </div>
+                        <div class="spec-entry">
+                            <span class="spec-key">AI Reasoning Model:</span>
+                            <span class="spec-val highlight-cyan">Gemini 3.5 Flash Lite</span>
+                        </div>
+                        <div class="spec-entry">
+                            <span class="spec-key">Speech Pause Threshold:</span>
+                            <span class="spec-val">2.0 Seconds</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tips & Shortcuts Card -->
+                <div class="glass-card tips-card">
+                    <div class="card-header">
+                        <span class="card-title">💡 Pro Tips</span>
+                    </div>
+                    <ul class="tips-list">
+                        <li><strong>Gmail Auto-Send:</strong> Commands like <em>"send email to..."</em> automatically open Gmail and trigger send without manual clicking.</li>
+                        <li><strong>Random Music:</strong> Say <em>"play music"</em> to automatically trigger a random curated hit.</li>
+                        <li><strong>Specific Songs:</strong> Say <em>"play &lt;song&gt;"</em> to immediately launch the #1 YouTube result.</li>
+                    </ul>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/app.js"></script>
+</body>
+</html>

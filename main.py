@@ -64,7 +64,7 @@ prompt = ChatPromptTemplate.from_messages(
             "1. Research Tools: 'search' (DuckDuckGo web search) and 'wikipedia' (encyclopedic summaries).\n"
             "2. macOS Desktop & System Tools:\n"
             "   - 'open_app', 'close_app', 'open_file_or_folder', 'open_website'\n"
-            "   - 'play_youtube_video', 'open_youtube_video'\n"
+            "   - 'play_youtube_video', 'open_youtube_video', 'play_music'\n"
             "   - 'create_note_file' (write files to Desktop), 'read_desktop_file' (read files from Desktop)\n"
             "   - 'send_email', 'send_or_compose_email' (automatically sends emails via Gmail)\n"
             "   - 'set_system_volume', 'mute_system_sound', 'take_screenshot', 'get_battery_status'\n"
@@ -81,6 +81,7 @@ prompt = ChatPromptTemplate.from_messages(
             "  * 'maps' vs 'google maps': 'maps' is Apple Maps (Maps.app); 'google maps' is Google Maps.\n"
             "  * 'photos' vs 'google photos': 'photos' is Apple Photos (Photos.app); 'google photos' is Google Photos.\n"
             "  * 'code' / 'vs code' vs 'antigravity ide' vs 'xcode': These are distinct programming IDEs/editors.\n"
+            "- If the user asks to play music or any music, invoke 'play_music'. It will automatically play the #1 top YouTube result or select a popular hit if no specific song is named.\n"
             "- If the user asks to open, play, or watch a video or channel content on YouTube "
             "(e.g. 'open youtube apna college python course', 'play lofi music on youtube', 'open video python course on youtube'), "
             "ALWAYS invoke 'play_youtube_video' with the query. It will automatically find the exact video and play it directly in the browser.\n"
@@ -222,14 +223,14 @@ def print_welcome_banner():
     """Prints a modern, vibrant header banner with capabilities and tips."""
     banner_text = Text()
     banner_text.append("MacOS AI Agent — Autonomous Desktop Assistant & Research Engine\n", style="bold bright_cyan")
-    banner_text.append("⚡ Sub-50ms Instant Execution  •  🧠 Multi-Turn Memory  •  🔍 Live Web Intelligence", style="dim italic white")
+    banner_text.append("⚡ Sub-50ms Instant Execution  •  🎙️ Hands-Free Voice Control  •  🧠 Multi-Turn Memory", style="dim italic white")
 
     console.print(Panel(
         banner_text,
         border_style="bright_cyan",
         padding=(1, 2)
     ))
-    console.print("[dim]Type [bold white]'help'[/bold white] for command reference, [bold white]'/clear'[/bold white] to reset conversation memory, or [bold white]'exit'[/bold white] to quit.[/dim]\n")
+    console.print("[dim]Type [bold white]'voice'[/bold white] for hands-free voice mode, [bold white]'help'[/bold white] for reference, [bold white]'/clear'[/bold white] to reset, or [bold white]'exit'[/bold white] to quit.[/dim]\n")
 
 def print_help_table():
     """Prints a styled Rich table with command categories and examples."""
@@ -240,9 +241,21 @@ def print_help_table():
     table.add_column("Speed", style="green", width=12)
 
     table.add_row(
+        "🎙️ Voice Mode",
+        "Continuous hands-free voice control (2s pause auto-exec)",
+        "'voice', 'python main.py --voice'",
+        "⚡ Instant"
+    )
+    table.add_row(
         "⚡ System Controls",
-        "Volume, mute, battery, dark mode, specs, screenshot",
-        "'battery', 'specs', 'volume 45%', 'dark mode', 'screenshot'",
+        "Volume (+/-15%), mute, battery, dark mode, specs, screenshot",
+        "'volume up', 'volume down', 'battery', 'dark mode', 'screenshot'",
+        "⚡ <50ms"
+    )
+    table.add_row(
+        "🎵 Smart Music",
+        "Top YouTube search result or random popular hit",
+        "'play music', 'play any music', 'play starboy', 'play sunflower'",
         "⚡ <50ms"
     )
     table.add_row(
@@ -368,9 +381,96 @@ def execute_query(query: str, chat_history: list = None):
         console.print(f"[bold red]❌ Unexpected error formatting response:[/bold red] {e}")
         console.print("[dim]Raw Response:[/dim]\n", raw_text)
 
+def run_voice_loop(chat_history: list):
+    """Continuous hands-free voice command loop:
+    Listens continuously -> detects speech -> waits exactly 2.0s of silence after speaking -> 
+    transcribes speech -> executes automatically without ANY key press -> immediately listens again!
+    """
+    try:
+        import speech_recognition as sr
+    except ImportError:
+        console.print("[bold red]❌ SpeechRecognition is not installed. Please run: pip install SpeechRecognition pyaudio[/bold red]")
+        return
+
+    recognizer = sr.Recognizer()
+    recognizer.pause_threshold = 2.0  # Exactly 2 seconds of silence after speaking before executing!
+    recognizer.non_speaking_duration = 0.5
+    recognizer.dynamic_energy_threshold = True
+
+    console.print()
+    console.print(Panel(
+        "[bold bright_cyan]🎙️  Hands-Free Continuous Voice Mode Active[/bold bright_cyan]\n\n"
+        "• Speak naturally (e.g. [cyan]'open youtube'[/cyan], [cyan]'play music'[/cyan], [cyan]'volume up'[/cyan], [cyan]'volume down'[/cyan], [cyan]'send email to...'[/cyan]).\n"
+        "• [bold green]Zero keypresses needed[/bold green]: Stops after [bold yellow]2.0 seconds[/bold yellow] of silence and executes automatically!\n"
+        "• Say [cyan]'switch to text'[/cyan] or [cyan]'exit'[/cyan] to stop voice mode, or press [dim]Ctrl+C[/dim].",
+        border_style="bright_cyan",
+        title="[bold white]🎤 Voice Assistant Engine[/bold white]"
+    ))
+
+    try:
+        with sr.Microphone() as source:
+            console.print("[dim cyan]🔧 Calibrating microphone for ambient room noise...[/dim cyan]")
+            recognizer.adjust_for_ambient_noise(source, duration=0.8)
+            console.print("[bold green]✅ Microphone ready! Speak your commands anytime.[/bold green]\n")
+
+            while True:
+                console.print("[bold bright_cyan]🎤 Listening...[/bold bright_cyan] [dim](speak; pauses for 2s to execute)[/dim]")
+                try:
+                    audio = recognizer.listen(source, timeout=None, phrase_time_limit=15)
+                except KeyboardInterrupt:
+                    raise
+                except Exception as e:
+                    console.print(f"[dim red]Audio capture warning: {e}[/dim red]")
+                    continue
+
+                console.print("[dim bright_yellow]⚡ 2s speech pause detected. Transcribing & executing...[/dim bright_yellow]")
+
+                try:
+                    query = recognizer.recognize_google(audio)
+                except sr.UnknownValueError:
+                    console.print("[dim italic]Could not understand audio clearly. Please try again.[/dim italic]\n")
+                    continue
+                except sr.RequestError as e:
+                    console.print(f"[bold red]❌ Speech recognition service error:[/bold red] {e}\n")
+                    continue
+                except Exception as e:
+                    console.print(f"[dim red]Error processing speech:[/dim red] {e}\n")
+                    continue
+
+                query = query.strip()
+                if not query:
+                    continue
+
+                console.print(f"\n[bold bright_blue]🗣️  You said: [/bold bright_blue][bold bright_white]\"{query}\"[/bold bright_white]")
+
+                clean_q = query.lower().strip()
+                if clean_q in ("exit", "quit", "stop", "goodbye", "bye", "shutdown"):
+                    console.print("\n[bold bright_cyan]Voice mode closed. Goodbye![/bold bright_cyan]\n")
+                    break
+
+                if clean_q in ("switch to text", "text mode", "keyboard mode", "stop voice", "turn off voice"):
+                    console.print("\n[italic bright_green]🔄 Switching to interactive text mode...[/italic bright_green]\n")
+                    break
+
+                if clean_q in ("/clear", "clear memory", "reset memory", "clear conversation"):
+                    chat_history.clear()
+                    console.print("[italic bright_green]✨ Conversation memory cleared.[/italic bright_green]\n")
+                    continue
+
+                # Automatically execute! Sub-50ms router or agent
+                execute_query(query, chat_history)
+
+    except KeyboardInterrupt:
+        console.print("\n[dim]Voice listening stopped by user.[/dim]\n")
+
 def main():
     print_welcome_banner()
     chat_history = []
+
+    # Check CLI arguments for direct voice mode
+    if "--voice" in sys.argv or "-v" in sys.argv:
+        run_voice_loop(chat_history)
+        return
 
     while True:
         try:
@@ -382,6 +482,10 @@ def main():
             if clean_q in ("exit", "quit", "q"):
                 console.print("\n[bold bright_cyan]Goodbye! Have a productive day.[/bold bright_cyan]\n")
                 break
+
+            if clean_q in ("voice", "/voice", "voice mode", "mic", "listen"):
+                run_voice_loop(chat_history)
+                continue
 
             if clean_q in ("help", "/help", "?"):
                 print_help_table()
@@ -400,3 +504,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
